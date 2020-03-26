@@ -1,0 +1,11 @@
+{
+  "name": "nodejs-drugbank",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "follow-redirects": "^1.10.0",
+    "parse-link-header": "^1.0.1",
+    "unzipper": "^0.10.10"
+  }
+}

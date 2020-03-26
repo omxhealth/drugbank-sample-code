@@ -36,3 +36,23 @@ The following example scripts are provided:
  * `portal.js`
     This script contains sample code for downloading archives from your portal,
     and reading drug JSON files in a zip archive.
+    
+ ## Python(3)
+ 
+Python examples can be found in the python/ folder. These examples have been written and tested against python3.
+
+These examples do have some external dependencies, which are declared in the requirements.txt file. To make a
+virtual environment and install the dependencies, you could run:
+
+```
+python3 -m venv env/
+source env/bin/activate
+pip install wheel pip # make sure pip is up to date
+pip install -r requirements.txt
+```
+ 
+
+The following example scripts are provided:
+
+ * `portal.py`
+    This script contains sample code for downloading archives from your portal.

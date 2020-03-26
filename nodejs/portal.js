@@ -47,7 +47,7 @@ async function each_drug_file(zip_path, callback) {
           .pipe(unzip.Parse({forceStream: true}));
 
     for await (const entry of zip) {
-        let filename = entry.path
+        let filename = entry.path;
         if (filename.endsWith(".json")) {
             entry.buffer().then((buffer) => {
                 callback(JSON.parse(buffer.toString("utf8")));

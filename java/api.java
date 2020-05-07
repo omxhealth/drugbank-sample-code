@@ -26,6 +26,8 @@ public class api {
 
         API_Key_Check();
 
+        ddi_example();
+
     }
 
     /**
@@ -126,11 +128,31 @@ public class api {
 
         try {
             drugbank_get("drug_names", params);
-        }
-
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Drug-drug interaction (DDI) example. 
+     * Gets interactions by Drugbank ids
+     */
+    public static void ddi_example() {
+        
+        String[] drug_ids = new String[]{"DB01598", "DB01597", "DB12377", "DB01004"};
+
+        Map<String, Object> params = new HashMap<String, Object>() {
+            {
+                put("drugbank_id", String.join(",", drug_ids));
+            }
+        };
+
+        try {
+            drugbank_get("ddi", params);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
     }
     
 }

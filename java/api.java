@@ -6,9 +6,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
-import org.json.JSONObject;
+import org.json.*;
 
 public class api {
 
@@ -26,12 +27,13 @@ public class api {
 
         API_Key_Check();
 
-        ddi_example();
-
+        //ddi_example();
+        adverse_effects_paging_example();
+    
     }
 
     /**
-     * Checks if the dev API key has been set in the environment
+     * Checks if the dev API key has been set in the system environment
      */
     public static void API_Key_Check() {
         if (DRUGBANK_API_KEY == null) {
@@ -41,6 +43,15 @@ public class api {
     }
 
     /**
+     * Creates the URL where the API call is to be sent to (no query parameters)
+     */
+    public static URL drugbank_url(String route) throws MalformedURLException {
+        URL url = new URL(DRUGBANK_API + route);
+        return url;
+    }
+
+    /**
+     * Creates the URL where the API call is to be sent to (with query parameters)
      * Implemented from https://stackoverflow.com/a/26177982/12471692
      * @param route what to pull from the API
      * @param params the query parameters to the API
@@ -73,17 +84,40 @@ public class api {
      
     }
 
+    /**
+     * Sets the header for the connection before establishing it.
+     */
     public static void setHeader(HttpsURLConnection connection) {
         for (Map.Entry<String, String> entry: DRUGBANK_HEADERS.entrySet()) {
             connection.setRequestProperty(entry.getKey(), entry.getValue());;
         }
     }
 
-    public static void drugbank_get(String route, Map<String, Object> params) throws IOException, URISyntaxException {
+    public static DBResponse drugbank_get(String route) throws IOException, URISyntaxException {
+        return drugbank_get(route, null);
+    }
+
+    /**
+     * Makes a GET request to the DrugBank API with query parameters.
+     * @param route: the url route
+     * @param params: url query parameters
+     * @return JSON object retrieved
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    public static DBResponse drugbank_get(String route, Map<String, Object> params) throws IOException, URISyntaxException {
 
         int responseCode;
+        URL url;
+        DBResponse res;
         String readLine = "";
-        URL url = drugbank_url(route, params);
+
+        if (params == null) {
+            url = drugbank_url(route);
+        } else {
+            url = drugbank_url(route, params);
+        }
+        
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
         connection.setRequestMethod("GET");
@@ -102,17 +136,22 @@ public class api {
 
             in.close();
 
-            JSONObject responseJSON = new JSONObject(response.toString());
-            pretty_log(responseJSON);
+            Map<String, List<String>> header = connection.getHeaderFields();
+            
+            if (response.toString().startsWith("[")) {
+                JSONArray responseJSON = new JSONArray(response.toString());
+                res = new DBResponse(responseJSON, header);
+            } else {
+                JSONObject responseJSON = new JSONObject(response.toString());
+                res = new DBResponse(responseJSON, header);
+            }
+            
+            return res;
 
         } else {
             throw new RuntimeException("Request Failed. Status Code: " + responseCode);
         }
 
-    }
-
-    public static void pretty_log(JSONObject json) {
-        System.out.print(json.toString(4));
     }
 
     /**
@@ -127,7 +166,8 @@ public class api {
         };
 
         try {
-            drugbank_get("drug_names", params);
+            DBResponse res = drugbank_get("drug_names", params);
+            res.prettyPrintData();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -148,11 +188,95 @@ public class api {
         };
 
         try {
-            drugbank_get("ddi", params);
+            DBResponse res = drugbank_get("ddi", params);
+            res.prettyPrintData();
         } catch (Exception e) {
             e.printStackTrace();
         }
         
     }
+
+    public static Object adverse_effects_paging_example() {
+        
+        try {
+            DBResponse page1 = drugbank_get("drugs/DB00472/adverse_effects");
+            DBResponse page2 = drugbank_get(page1.getNextPageLink());
+            return page2.data; 
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        
+    }
     
+}
+
+class DBResponse {
+
+    Object data;
+    Map<String, List<String>> response;
+    boolean isObject;
+
+    DBResponse(Object data, Map<String, List<String>> response) {
+        
+        if (data instanceof JSONObject) {
+            this.isObject = true;
+        } else if (data instanceof JSONArray) {
+            this.isObject = false;
+        } else {
+            throw new IllegalArgumentException("Data provided is not an instance of a JSONObject or JSONArray");
+        }
+        
+        this.data = data;
+        this.response = response;
+        
+    }
+
+    public boolean isObject() {
+        return this.isObject();
+    }
+
+    public Map<String, List<String>> getResponse() {
+        return response;
+    }
+
+    /**
+     * Returns the data from the database response.
+     * Remember to cast to the correct type (JSONObject or JSONArray)!
+     * @return
+     */
+    public Object getData() {
+        return data;
+    }
+
+    public String getNextPageLink() {
+        String header = this.response.get("Link").toString();
+
+        if (header == null){
+            return null;
+        } else {
+            return header;
+        }
+
+    }
+
+    public void printResponse() {
+        
+        System.out.println("Response Header:");
+        
+        for (Map.Entry<String, List<String>> entry : this.response.entrySet()) {
+            System.out.println("Key : " + entry.getKey() + " , Value : " + entry.getValue());
+        }
+
+    }
+
+    public void prettyPrintData() {
+        if (isObject){
+            System.out.print(((JSONObject) data).toString(4));
+        } else {
+            System.out.print(((JSONArray) data).toString(4));
+        }
+        
+    }
+
 }

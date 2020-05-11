@@ -1,10 +1,13 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,35 +30,44 @@ public class api {
 
         API_Key_Check();
 
+        //drug_names_example();
         //ddi_example();
-        adverse_effects_paging_example();
+        //adverse_effects_paging_example();
     
     }
 
     /**
-     * Checks if the dev API key has been set in the system environment
+     * Checks if the dev API key has been set in the system environment.
+     * If it is not set, program terminates.
      */
     public static void API_Key_Check() {
+        
         if (DRUGBANK_API_KEY == null) {
             System.out.println("please set environment variable DB_API_KEY");
             System.exit(1);
         }
+
     }
 
     /**
      * Creates the URL where the API call is to be sent to (no query parameters)
      */
     public static URL drugbank_url(String route) throws MalformedURLException {
-        URL url = new URL(DRUGBANK_API + route);
-        return url;
+
+        if (route.contains(DRUGBANK_API)) {
+            return new URL(route);
+        } else {
+            return new URL(DRUGBANK_API + route);
+        }
+        
     }
 
     /**
      * Creates the URL where the API call is to be sent to (with query parameters)
      * Implemented from https://stackoverflow.com/a/26177982/12471692
-     * @param route what to pull from the API
+     * @param route where to pull from
      * @param params the query parameters to the API
-     * @return
+     * @return URL to the API with the given route and queries
      * @throws URISyntaxException
      * @throws MalformedURLException
      */
@@ -93,6 +105,13 @@ public class api {
         }
     }
 
+    /**
+     * Makes a GET request to the DrugBank API with no query parameters.
+     * @param route: the url route
+     * @return DBResponse
+     * @throws IOException
+     * @throws URISyntaxException
+     */
     public static DBResponse drugbank_get(String route) throws IOException, URISyntaxException {
         return drugbank_get(route, null);
     }
@@ -101,7 +120,7 @@ public class api {
      * Makes a GET request to the DrugBank API with query parameters.
      * @param route: the url route
      * @param params: url query parameters
-     * @return JSON object retrieved
+     * @return DBResponse
      * @throws IOException
      * @throws URISyntaxException
      */
@@ -175,7 +194,7 @@ public class api {
 
     /**
      * Drug-drug interaction (DDI) example. 
-     * Gets interactions by Drugbank ids
+     * Gets interactions by Drugbank IDs.
      */
     public static void ddi_example() {
         
@@ -200,8 +219,18 @@ public class api {
         
         try {
             DBResponse page1 = drugbank_get("drugs/DB00472/adverse_effects");
-            DBResponse page2 = drugbank_get(page1.getNextPageLink());
-            return page2.data; 
+            DBResponse page2 = drugbank_get(page1.paginationNext().get("url").get(0).toString());
+            JSONArray both = new JSONArray();
+
+            for (int i = 0; i < ((JSONArray) page1.data).length(); i++) {
+                both.put(((JSONArray) page1.data).get(i));
+            }
+            for (int i = 0; i < ((JSONArray) page2.data).length(); i++) {
+                both.put(((JSONArray) page1.data).get(i));
+            }
+
+            return both; 
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -213,9 +242,9 @@ public class api {
 
 class DBResponse {
 
-    Object data;
-    Map<String, List<String>> response;
-    boolean isObject;
+    Object data; //the JSON object or array returned from call
+    Map<String, List<String>> response; //response header from the call
+    boolean isObject; //used to check if the data stored is a JSONObject or JSONArray
 
     DBResponse(Object data, Map<String, List<String>> response) {
         
@@ -243,13 +272,18 @@ class DBResponse {
     /**
      * Returns the data from the database response.
      * Remember to cast to the correct type (JSONObject or JSONArray)!
-     * @return
+     * @return JSON object or array (as an Object)
      */
     public Object getData() {
         return data;
     }
 
+    /**
+     * Returns the link to the next page of the data.
+     * Only applicable to requests that offer pagination.
+     */
     public String getNextPageLink() {
+        
         String header = this.response.get("Link").toString();
 
         if (header == null){
@@ -260,6 +294,73 @@ class DBResponse {
 
     }
 
+    /**
+     * Returns information on requests that offer pagination, with the follwoing structure: 
+     * {
+     *     page: '2',
+     *     per_page: '50',
+     *     rel: 'next',
+     *     url: 'https://api.drugbankplus.com/v1/drugs/DB00472/adverse_effects?page=2&per_page=50'
+     * }
+     * 
+     * Adapted from https://stackoverflow.com/a/5902142/12471692, as Java doesn't
+     * have a nice link parser (that I could find that is!).
+     * 
+     * @return 
+     */
+    public Map<String, List<String>> paginationNext() {
+        try {
+            
+            Map<String, List<String>> params = new HashMap<String, List<String>>();
+            String url = this.response.get("Link").toString().replaceAll(">; ", "&");
+            
+            if (url == null){
+                return null;
+            }
+
+            url = url.replaceAll("[\\[\\]]|<|\"", "");
+            String[] urlParts = url.split("\\?");
+            if (urlParts.length > 1) {
+                String query = urlParts[1];
+                for (String param : query.split("&")) {
+                    String[] pair = param.split("=");
+                    String key = URLDecoder.decode(pair[0], "UTF-8");
+                    String value = "";
+                    if (pair.length > 1) {
+                        value = URLDecoder.decode(pair[1], "UTF-8");
+                    }
+    
+                    List<String> values = params.get(key);
+                    if (values == null) {
+                        values = new ArrayList<String>();
+                        params.put(key, values);
+                    }
+                    values.add(value);
+                }
+
+                List<String> values = new ArrayList<String>();
+                values.add(url.replaceAll("&rel[^.]*", ""));
+                params.put("url", values);;
+  
+            }
+    
+            return params;
+
+        } catch (UnsupportedEncodingException ex) {
+            throw new AssertionError(ex);
+        }
+    }
+
+    /**
+     * Returns the total number of items matched by the request.
+     */
+    public int getTotalCount() {
+        return Integer.parseInt(this.response.get("X-Total-Count").toString());
+    }
+
+    /**
+     * Prints the response header to the terminal.
+     */
     public void printResponse() {
         
         System.out.println("Response Header:");
@@ -270,13 +371,16 @@ class DBResponse {
 
     }
 
+    /**
+     * Prints the JSON recieved to the terminal.
+     */
     public void prettyPrintData() {
         if (isObject){
             System.out.print(((JSONObject) data).toString(4));
         } else {
             System.out.print(((JSONArray) data).toString(4));
         }
-        
+
     }
 
 }

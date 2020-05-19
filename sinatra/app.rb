@@ -9,6 +9,6 @@ get '/' do
 end
 
 get '/token_generator' do
-  res = Net::HTTP.post(URI('https://api-js-qa.drugbankplus.com/v1/tokens'), {ttl: 24}.to_json, 'Authorization': 'ba073a81cc0de1d1f9be08d5a7092317', 'Content-Type': 'application/json', 'Cache-Control': 'no-cache')
+  res = Net::HTTP.post(URI('https://api-js-qa.drugbankplus.com/v1/tokens'), {ttl: 24}.to_json, 'Authorization': ENV['AUTH_TOKEN'], 'Content-Type': 'application/json', 'Cache-Control': 'no-cache')
   res.body
 end

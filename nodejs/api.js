@@ -3,7 +3,7 @@ const parseLinkHeader = require('parse-link-header');
 const URL = require('url').URL;
 const URLSearchParams = require('url').URLSearchParams;
 
-const DRUGBANK_API = "https://api.drugbankplus.com/v1/";
+const DRUGBANK_API = "https://api.drugbank.com/v1/";
 const DRUGBANK_API_KEY = process.env.DB_API_KEY;
 
 if (!DRUGBANK_API_KEY) {
@@ -36,7 +36,7 @@ class DBResponse {
     //     page: '2',
     //     per_page: '50',
     //     rel: 'next',
-    //     url: 'https://api.drugbankplus.com/v1/drugs/DB00472/adverse_effects?page=2&per_page=50'
+    //     url: 'https://api.drugbank.com/v1/drugs/DB00472/adverse_effects?page=2&per_page=50'
     // }
     get pagination_next() {
         let header = this.response.headers["link"];

@@ -5,19 +5,19 @@ This repo contains sample code to help you get started with the DrugBank API or 
 
 Be sure to check out the documentation:
 
- * [API V1 documentation](https://docs.drugbankplus.com/v1/)
- * [JSON documentation](https://docs.drugbankplus.com/json/)
- * [XML documentation](https://docs.drugbankplus.com/xml/)
- * [CSV documentation](https://docs.drugbankplus.com/csv/)
+ * [API V1 documentation](https://docs.drugbank.com/v1/)
+ * [JSON documentation](https://docs.drugbank.com/json/)
+ * [XML documentation](https://docs.drugbank.com/xml/)
+ * [CSV documentation](https://docs.drugbank.com/csv/)
  
  
 # Environment Variables
 
 The sample code uses the following environment variables:
 
- * `DB_API_KEY` : the API key you use to make API calls, as seen at dev.drugbankplus.com
- * `DB_USER` : the username you use to sign in at portal.drugbankplus.com 
- * `DB_PASS` : the password you use to sign in at portal.drugbankplus.com 
+ * `DB_API_KEY` : the API key you use to make API calls, as seen at dev.drugbank.com
+ * `DB_USER` : the username you use to sign in at portal.drugbank.com 
+ * `DB_PASS` : the password you use to sign in at portal.drugbank.com 
 
 # Scripts
 

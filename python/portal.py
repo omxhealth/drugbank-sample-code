@@ -14,7 +14,7 @@ def download(export_name, filename):
     downloads latest portal export with name export_name to filename.
     """
 
-    url = "https://portal.drugbankplus.com/downloads/{}/latest".format(export_name)
+    url = "https://portal.drugbank.com/downloads/{}/latest".format(export_name)
 
     response = requests.request("GET", url,
             auth=(DRUGBANK_USERNAME, DRUGBANK_PASSWORD), # set basic auth

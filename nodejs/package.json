@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "follow-redirects": "^1.10.0",
+    "follow-redirects": "^1.14.7",
     "parse-link-header": "^1.0.1",
     "unzipper": "^0.10.10"
   }
